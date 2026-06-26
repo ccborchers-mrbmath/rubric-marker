@@ -403,13 +403,9 @@ function DashboardPage() {
                             <p className="text-xs font-medium text-muted-foreground">
                               AI-generated assessment — edit inline, save, then download.
                             </p>
-                            <Textarea
+                            <DocxEditor
                               value={drafts[s.id] ?? s.draft_markdown ?? ""}
-                              onChange={(e) =>
-                                setDrafts((p) => ({ ...p, [s.id]: e.target.value }))
-                              }
-                              rows={18}
-                              className="font-mono text-sm"
+                              onChange={(v) => setDrafts((p) => ({ ...p, [s.id]: v }))}
                             />
                             <div className="flex justify-end gap-2">
                               <Button variant="outline" size="sm" onClick={() => onSaveDraft(s.id)}>
