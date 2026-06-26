@@ -95,11 +95,17 @@ Mark the submission strictly against the rubric. Output a structured assessment 
 
 Use clear language. Do not invent rubric criteria; use those in the rubric verbatim.`;
 
+      const [rubricBlock, briefBlock, studentBlock] = await Promise.all([
+        blockFor(session.rubric_mime, "rubric", rubricB64),
+        blockFor(session.brief_mime, "brief", briefB64),
+        blockFor(sub.mime_type, sub.file_name, studentB64),
+      ]);
+
       const userContent = [
         { type: "text" as const, text: "RUBRIC:" },
-        blockFor(session.rubric_mime, "rubric", rubricB64),
+        rubricBlock,
         { type: "text" as const, text: "ASSIGNMENT TASK BRIEF:" },
-        blockFor(session.brief_mime, "brief", briefB64),
+        briefBlock,
         ...(session.context_prompt
           ? [
               {
@@ -112,7 +118,7 @@ Use clear language. Do not invent rubric criteria; use those in the rubric verba
           type: "text" as const,
           text: `STUDENT SUBMISSION (student name: ${sub.student_name}):`,
         },
-        blockFor(sub.mime_type, sub.file_name, studentB64),
+        studentBlock,
         {
           type: "text" as const,
           text: "Now produce the structured Markdown assessment.",
