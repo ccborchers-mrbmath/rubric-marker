@@ -149,6 +149,7 @@ function DashboardPage() {
       toast.info("Nothing pending");
       return;
     }
+    setMarkAllLoading(true);
     toast.info(`Marking ${pending.length} submission${pending.length > 1 ? "s" : ""}…`);
     // Sequential to avoid hammering the gateway
     for (const s of pending) {
@@ -159,6 +160,7 @@ function DashboardPage() {
       }
       qc.invalidateQueries({ queryKey: ["subs", sessionId] });
     }
+    setMarkAllLoading(false);
   }
 
   async function onSaveDraft(id: string) {
