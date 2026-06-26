@@ -69,6 +69,7 @@ function DashboardPage() {
   const register = useServerFn(registerSubmission);
   const mark = useServerFn(markSubmission);
   const update = useServerFn(updateDraft);
+  const renameFn = useServerFn(updateStudentName);
   const dl = useServerFn(downloadAssessment);
   const del = useServerFn(deleteSubmission);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -78,6 +79,10 @@ function DashboardPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [markAllLoading, setMarkAllLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [sortBy, setSortBy] = useState<"last" | "first">("last");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   const session = useQuery({
     queryKey: ["session", sessionId],
