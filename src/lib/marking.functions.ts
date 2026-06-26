@@ -153,3 +153,117 @@ Use clear language. Do not invent rubric criteria; use those in the rubric verba
       throw new Error(msg);
     }
   });
+
+export const spellcheckDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid(), text: z.string().min(1) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+
+    const { data: sub, error } = await supabase
+      .from("submissions")
+      .select("id, student_name, user_id")
+      .eq("id", data.id)
+      .single();
+    if (error || !sub) throw new Error("Submission not found");
+
+    const { callGateway } = await import("./ai-gateway.server");
+    const system = `You are a meticulous proofreader for an assessment draft written in Markdown. Fix ONLY spelling, grammar, punctuation, and minor typo errors. Do NOT rewrite, rephrase, restructure, expand, shorten, or change the meaning, tone, or content. Preserve the author's voice and word choices.
+
+CRITICAL:
+- The student's name is "${sub.student_name}". This is the AUTHORITATIVE spelling — never change it. Do not "correct" other proper nouns unless they are obvious typos.
+- Preserve ALL Markdown formatting exactly: headings (#, ##, ###), bold (**), italics (*), lists (-, *, 1.), tables, blank lines, indentation.
+- Return ONLY the corrected Markdown, with no preamble, no explanation, no code fences.`;
+
+    const corrected = await callGateway({
+      apiKey,
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: data.text },
+      ],
+    });
+    const cleaned = corrected.trim();
+    if (!cleaned) throw new Error("Empty response");
+
+    await supabase
+      .from("submissions")
+      .update({ draft_markdown: cleaned })
+      .eq("id", data.id);
+    return { text: cleaned };
+  });
+
+export const rewriteSelection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        fullText: z.string().min(1),
+        selection: z.string().min(1),
+        instruction: z.string().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+    if (!data.fullText.includes(data.selection)) {
+      throw new Error("Selection must appear in the draft");
+    }
+
+    const { data: sub, error } = await supabase
+      .from("submissions")
+      .select("id, student_name, marking_sessions!inner(context_prompt)")
+      .eq("id", data.id)
+      .single();
+    if (error || !sub) throw new Error("Submission not found");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctxPrompt = (sub as any).marking_sessions?.context_prompt as
+      | string
+      | null;
+
+    const { callGateway } = await import("./ai-gateway.server");
+
+    const system = `You rewrite a SPECIFIC SELECTION inside an assessment draft written in Markdown for student "${sub.student_name}".
+${ctxPrompt ? `\nTEACHER CONTEXT:\n${ctxPrompt}\n` : ""}
+YOUR TASK:
+- Rewrite ONLY the SELECTED TEXT below.
+- The replacement must read naturally in place of the selection — keep similar length unless the user instruction asks otherwise.
+- Preserve Markdown formatting style of the selection (e.g. if it's a bullet, return a bullet; if it's a heading line, return a heading line).
+- Do NOT include the unchanged surrounding text in your output.
+- Do NOT add quotes, labels, code fences, or commentary.
+- Output ONLY the replacement text.
+${data.instruction ? `\nUSER INSTRUCTION: ${data.instruction}` : ""}`;
+
+    const user = `FULL DRAFT (for context — do NOT rewrite this whole thing):
+"""
+${data.fullText}
+"""
+
+SELECTED TEXT TO REWRITE:
+"""
+${data.selection}
+"""
+
+Return only the replacement for the selected text.`;
+
+    const replacement = await callGateway({
+      apiKey,
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+    });
+    const text = replacement.trim();
+    if (!text) throw new Error("Empty response");
+    return { text };
+  });
+
