@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
+import { Route as AuthenticatedSessionsRouteImport } from './routes/_authenticated/sessions'
 import { Route as AuthenticatedDashboardSessionIdRouteImport } from './routes/_authenticated/dashboard.$sessionId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -34,6 +35,11 @@ const AuthenticatedSetupRoute = AuthenticatedSetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSessionsRoute = AuthenticatedSessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardSessionIdRoute =
   AuthenticatedDashboardSessionIdRouteImport.update({
     id: '/dashboard/$sessionId',
@@ -44,12 +50,14 @@ const AuthenticatedDashboardSessionIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/sessions': typeof AuthenticatedSessionsRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/dashboard/$sessionId': typeof AuthenticatedDashboardSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/sessions': typeof AuthenticatedSessionsRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/dashboard/$sessionId': typeof AuthenticatedDashboardSessionIdRoute
 }
@@ -58,19 +66,21 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/sessions': typeof AuthenticatedSessionsRoute
   '/_authenticated/setup': typeof AuthenticatedSetupRoute
   '/_authenticated/dashboard/$sessionId': typeof AuthenticatedDashboardSessionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/setup' | '/dashboard/$sessionId'
+  fullPaths: '/' | '/auth' | '/sessions' | '/setup' | '/dashboard/$sessionId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/setup' | '/dashboard/$sessionId'
+  to: '/' | '/auth' | '/sessions' | '/setup' | '/dashboard/$sessionId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/sessions'
     | '/_authenticated/setup'
     | '/_authenticated/dashboard/$sessionId'
   fileRoutesById: FileRoutesById
@@ -111,6 +121,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSetupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sessions': {
+      id: '/_authenticated/sessions'
+      path: '/sessions'
+      fullPath: '/sessions'
+      preLoaderRoute: typeof AuthenticatedSessionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard/$sessionId': {
       id: '/_authenticated/dashboard/$sessionId'
       path: '/dashboard/$sessionId'
@@ -122,11 +139,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedSessionsRoute: typeof AuthenticatedSessionsRoute
   AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
   AuthenticatedDashboardSessionIdRoute: typeof AuthenticatedDashboardSessionIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedSessionsRoute: AuthenticatedSessionsRoute,
   AuthenticatedSetupRoute: AuthenticatedSetupRoute,
   AuthenticatedDashboardSessionIdRoute: AuthenticatedDashboardSessionIdRoute,
 }
