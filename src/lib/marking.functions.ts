@@ -15,14 +15,27 @@ async function fileToBase64(
   return buf.toString("base64");
 }
 
-function blockFor(mime: string, fileName: string, base64: string) {
+const DOCX_MIME =
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+async function blockFor(mime: string, fileName: string, base64: string) {
   if (mime.startsWith("image/")) {
     return {
       type: "image_url" as const,
       image_url: { url: `data:${mime};base64,${base64}` },
     };
   }
-  // PDF / DOCX / others: send as file block
+  if (mime === DOCX_MIME || fileName.toLowerCase().endsWith(".docx")) {
+    // Gemini doesn't accept .docx — extract text first.
+    const mammoth = await import("mammoth");
+    const buf = Buffer.from(base64, "base64");
+    const { value } = await mammoth.extractRawText({ buffer: buf });
+    return {
+      type: "text" as const,
+      text: `[Extracted text from ${fileName}]:\n${value}`,
+    };
+  }
+  // PDF / others: send as file block
   return {
     type: "file" as const,
     file: {
