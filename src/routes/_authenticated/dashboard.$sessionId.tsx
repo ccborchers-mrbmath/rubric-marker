@@ -290,8 +290,13 @@ function DashboardPage() {
                 className="hidden"
                 onChange={(e) => onBulkUpload(e.target.files)}
               />
-              <Button variant="outline" onClick={() => fileRef.current?.click()}>
-                <Upload className="mr-1.5 h-4 w-4" /> Upload
+              <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                {uploading ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-1.5 h-4 w-4" />
+                )}
+                {uploading ? "Uploading…" : "Upload"}
               </Button>
               <Button onClick={onMarkAllPending} disabled={markAllLoading}>
                 {markAllLoading ? (
