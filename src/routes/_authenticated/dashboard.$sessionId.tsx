@@ -35,6 +35,7 @@ import {
   Eye,
   FileText,
   GraduationCap,
+  Loader2,
   LogOut,
   Sparkles,
   Trash2,
@@ -67,6 +68,7 @@ function DashboardPage() {
   const [preview, setPreview] = useState<PreviewMode | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [markAllLoading, setMarkAllLoading] = useState(false);
 
   const session = useQuery({
     queryKey: ["session", sessionId],
@@ -147,6 +149,7 @@ function DashboardPage() {
       toast.info("Nothing pending");
       return;
     }
+    setMarkAllLoading(true);
     toast.info(`Marking ${pending.length} submission${pending.length > 1 ? "s" : ""}…`);
     // Sequential to avoid hammering the gateway
     for (const s of pending) {
@@ -157,6 +160,7 @@ function DashboardPage() {
       }
       qc.invalidateQueries({ queryKey: ["subs", sessionId] });
     }
+    setMarkAllLoading(false);
   }
 
   async function onSaveDraft(id: string) {
@@ -285,8 +289,13 @@ function DashboardPage() {
               <Button variant="outline" onClick={() => fileRef.current?.click()}>
                 <Upload className="mr-1.5 h-4 w-4" /> Upload
               </Button>
-              <Button onClick={onMarkAllPending}>
-                <Sparkles className="mr-1.5 h-4 w-4" /> Mark all pending
+              <Button onClick={onMarkAllPending} disabled={markAllLoading}>
+                {markAllLoading ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1.5 h-4 w-4" />
+                )}
+                Mark all pending
               </Button>
             </div>
           </CardContent>
@@ -359,10 +368,15 @@ function DashboardPage() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              disabled={markMut.isPending && markMut.variables === s.id}
                               onClick={() => markMut.mutate(s.id)}
                               title={s.marking_status === "complete" ? "Re-mark" : "Mark"}
                             >
-                              <Wand2 className="h-4 w-4" />
+                              {markMut.isPending && markMut.variables === s.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Wand2 className="h-4 w-4" />
+                              )}
                             </Button>
                           )}
                           {s.marking_status === "complete" && (
