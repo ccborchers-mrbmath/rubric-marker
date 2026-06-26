@@ -334,7 +334,7 @@ function DashboardPage() {
                   <FragmentWithKey key={s.id}>
                     <TableRow>
 
-                      <TableCell className="font-medium">{s.student_name}</TableCell>
+                      <TableCell className="font-medium">{formatStudentName(s.student_name)}</TableCell>
                       <TableCell>
                         <button
                           onClick={() =>
