@@ -142,3 +142,38 @@
     color: var(--color-foreground);
   }
 }
+
+/* Word-like styling for the inline assessment editor (TipTap) */
+.docx-page { color: #1a1a1a; }
+.docx-page:focus { outline: none; }
+.docx-page h1, .docx-page h2, .docx-page h3 {
+  color: #1f3864;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 1em 0 0.4em;
+}
+.docx-page h1 { font-size: 22pt; }
+.docx-page h2 { font-size: 16pt; }
+.docx-page h3 { font-size: 13pt; }
+.docx-page p { margin: 0.5em 0; }
+.docx-page strong { font-weight: 700; color: #1a1a1a; }
+.docx-page em { font-style: italic; }
+.docx-page ul, .docx-page ol { margin: 0.5em 0 0.5em 1.5em; }
+.docx-page ul { list-style: disc; }
+.docx-page ol { list-style: decimal; }
+.docx-page li { margin: 0.15em 0; }
+.docx-page blockquote {
+  border-left: 3px solid #c7d2e0;
+  padding-left: 0.75em;
+  color: #475569;
+  margin: 0.5em 0;
+}
+.docx-page code {
+  font-family: Consolas, "Courier New", monospace;
+  background: #f1f5f9;
+  padding: 0 0.25em;
+  border-radius: 3px;
+  font-size: 0.95em;
+}
+.docx-page .ProseMirror-trailingBreak { display: inline; }
+
