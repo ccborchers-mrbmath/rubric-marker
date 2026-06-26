@@ -202,10 +202,11 @@ function DashboardPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <Button asChild variant="ghost" size="sm">
-              <Link to="/setup">
-                <ArrowLeft className="mr-1 h-4 w-4" /> New session
+              <Link to="/sessions">
+                <ArrowLeft className="mr-1 h-4 w-4" /> All sessions
               </Link>
             </Button>
+
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <GraduationCap className="h-4 w-4" />

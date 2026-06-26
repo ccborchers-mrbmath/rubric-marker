@@ -38,11 +38,26 @@ export const listSessions = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("marking_sessions")
-      .select("id,name,created_at")
-      .order("created_at", { ascending: false });
+      .select("id,name,created_at,updated_at,submissions(marking_status)")
+      .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return data;
+    return (data ?? []).map((s: any) => {
+      const subs: { marking_status: string }[] = s.submissions ?? [];
+      const total = subs.length;
+      const complete = subs.filter((x) => x.marking_status === "complete").length;
+      const inProgress = subs.filter((x) => x.marking_status === "in_progress").length;
+      const pending = subs.filter((x) => x.marking_status === "pending").length;
+      const errored = subs.filter((x) => x.marking_status === "error").length;
+      return {
+        id: s.id,
+        name: s.name,
+        created_at: s.created_at,
+        updated_at: s.updated_at,
+        counts: { total, complete, in_progress: inProgress, pending, errored },
+      };
+    });
   });
+
 
 export const getSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -69,3 +84,36 @@ export const getSignedUrl = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { url: signed.signedUrl };
   });
+
+export const deleteSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    // Gather all storage paths to remove
+    const { data: subs } = await supabase
+      .from("submissions")
+      .select("file_path")
+      .eq("session_id", data.id);
+    const { data: sess } = await supabase
+      .from("marking_sessions")
+      .select("rubric_path,brief_path")
+      .eq("id", data.id)
+      .single();
+    const paths = [
+      ...(subs ?? []).map((s) => s.file_path),
+      sess?.rubric_path,
+      sess?.brief_path,
+    ].filter((p): p is string => !!p);
+    if (paths.length) {
+      await supabase.storage.from("marking-files").remove(paths);
+    }
+    const { error } = await supabase
+      .from("marking_sessions")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
