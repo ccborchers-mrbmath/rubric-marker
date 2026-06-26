@@ -69,6 +69,7 @@ function DashboardPage() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [markAllLoading, setMarkAllLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const session = useQuery({
     queryKey: ["session", sessionId],
