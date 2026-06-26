@@ -27,9 +27,16 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/sessions" });
+    // Pick up any in-flight Supabase session (incl. OAuth redirect callback)
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/sessions" });
     });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
+        navigate({ to: "/sessions" });
+      }
+    });
+    return () => sub.subscription.unsubscribe();
   }, [navigate]);
 
   async function handleEmail(e: React.FormEvent) {
