@@ -31,6 +31,10 @@ import { DocxEditor } from "@/components/DocxEditor";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  Check,
   ClipboardList,
   Download,
   Eye,
@@ -38,11 +42,14 @@ import {
   GraduationCap,
   Loader2,
   LogOut,
+  Pencil,
   Sparkles,
   Trash2,
   Upload,
   Wand2,
+  X,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/dashboard/$sessionId")({
   head: () => ({ meta: [{ title: "Marking dashboard — MarkMate" }] }),
