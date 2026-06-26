@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusPill } from "@/components/StatusPill";
 import { PreviewModal } from "@/components/PreviewModal";
+import { DocxEditor } from "@/components/DocxEditor";
 import { toast } from "sonner";
 import {
   ArrowLeft,
