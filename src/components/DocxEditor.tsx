@@ -62,12 +62,13 @@ export function DocxEditor({
     editorProps: {
       attributes: {
         class:
-          "docx-page min-h-[60vh] w-full max-w-[8.5in] bg-white px-[1in] py-[1in] text-[#1a1a1a] shadow-md ring-1 ring-black/5 outline-none focus:ring-2 focus:ring-primary/40 rounded-sm prose prose-sm max-w-none prose-headings:text-[#1f3864] prose-headings:font-semibold prose-h1:text-[22pt] prose-h2:text-[16pt] prose-h3:text-[13pt] prose-p:my-2 prose-strong:text-[#1a1a1a]",
+          "docx-page w-full max-w-[8.5in] bg-white px-[1in] py-[1in] text-[#1a1a1a] shadow-md ring-1 ring-black/5 outline-none focus:ring-2 focus:ring-primary/40 rounded-sm",
         style:
-          "font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.5;",
+          "font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.5; min-height: 11in;",
         spellcheck: "true",
       },
     },
+
     onUpdate: ({ editor }) => {
       const md = htmlToMd(editor.getHTML());
       lastEmittedMd.current = md;
@@ -248,9 +249,12 @@ export function DocxEditor({
         </p>
       </div>
 
-      <div className="flex justify-center overflow-auto rounded-md bg-muted/40 p-4 sm:p-6">
-        <EditorContent editor={editor} className="w-full max-w-[8.5in]" />
+      <div className="max-h-[75vh] overflow-auto rounded-md bg-muted/40 p-4 sm:p-6">
+        <div className="flex justify-center">
+          <EditorContent editor={editor} className="w-full max-w-[8.5in]" />
+        </div>
       </div>
+
 
       <Dialog
         open={!!rewrite}
