@@ -27,10 +27,22 @@ export async function uploadToBucket(opts: {
 
 export function nameFromFilename(filename: string): string {
   const base = filename.replace(/\.[^.]+$/, "");
-  return base
+  const cleaned = base
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+  return formatStudentName(cleaned);
+}
+
+export function formatStudentName(raw: string): string {
+  const trimmed = raw.trim();
+  // Already in "Last, First" format — keep it
+  if (/^[^,\s][^,]*,\s*\S/.test(trimmed)) {
+    return trimmed;
+  }
+  const words = trimmed.split(/\s+/);
+  if (words.length < 2) return trimmed;
+  return `${words[1]}, ${words[0]}`;
 }
 
 export { safeName };
