@@ -373,7 +373,33 @@ function DashboardPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Student</TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1">
+                    <span>Student</span>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("last")}
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs hover:bg-muted"
+                      title="Sort by surname"
+                    >
+                      Surname
+                      {sortBy === "last" ? (
+                        sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("first")}
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs hover:bg-muted"
+                      title="Sort by first name"
+                    >
+                      First
+                      {sortBy === "first" ? (
+                        sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </button>
+                  </div>
+                </TableHead>
                 <TableHead>Document</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -387,13 +413,47 @@ function DashboardPage() {
                   </TableCell>
                 </TableRow>
               )}
-              {(subs.data ?? []).map((s) => {
+              {sortedSubs.map((s) => {
                 const isOpen = expanded[s.id] && s.marking_status === "complete";
+                const displayName = formatStudentName(s.student_name);
+                const isEditing = editingId === s.id;
                 return (
                   <FragmentWithKey key={s.id}>
                     <TableRow>
 
-                      <TableCell className="font-medium">{formatStudentName(s.student_name)}</TableCell>
+                      <TableCell className="font-medium">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              autoFocus
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") commitEdit(s.id);
+                                if (e.key === "Escape") setEditingId(null);
+                              }}
+                              className="h-7 text-sm"
+                              placeholder="Last, First"
+                            />
+                            <Button variant="ghost" size="sm" onClick={() => commitEdit(s.id)} title="Save">
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} title="Cancel">
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(s.id, displayName)}
+                            className="group inline-flex items-center gap-1.5 text-left hover:text-primary"
+                            title="Click to edit name"
+                          >
+                            <span>{displayName}</span>
+                            <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60" />
+                          </button>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <button
                           onClick={() =>
