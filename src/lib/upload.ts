@@ -27,10 +27,19 @@ export async function uploadToBucket(opts: {
 
 export function nameFromFilename(filename: string): string {
   const base = filename.replace(/\.[^.]+$/, "");
-  return base
+  const cleaned = base
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+  return formatStudentName(cleaned);
+}
+
+export function formatStudentName(raw: string): string {
+  const words = raw.trim().split(/\s+/);
+  if (words.length < 2) return raw;
+  const first = words[0];
+  const last = words[1];
+  return `${last}, ${first}`;
 }
 
 export { safeName };
