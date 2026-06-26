@@ -12,7 +12,7 @@ import {
   deleteSubmission,
 } from "@/lib/submissions.functions";
 import { markSubmission } from "@/lib/marking.functions";
-import { uploadToBucket, nameFromFilename } from "@/lib/upload";
+import { uploadToBucket, nameFromFilename, formatStudentName } from "@/lib/upload";
 import { Button } from "@/components/ui/button";
 import {
   Table,
