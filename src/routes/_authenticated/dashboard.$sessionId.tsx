@@ -8,6 +8,7 @@ import {
   listSubmissions,
   registerSubmission,
   updateDraft,
+  updateStudentName,
   downloadAssessment,
   deleteSubmission,
 } from "@/lib/submissions.functions";
@@ -30,6 +31,10 @@ import { DocxEditor } from "@/components/DocxEditor";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  Check,
   ClipboardList,
   Download,
   Eye,
@@ -37,11 +42,14 @@ import {
   GraduationCap,
   Loader2,
   LogOut,
+  Pencil,
   Sparkles,
   Trash2,
   Upload,
   Wand2,
+  X,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/dashboard/$sessionId")({
   head: () => ({ meta: [{ title: "Marking dashboard — MarkMate" }] }),
@@ -61,6 +69,7 @@ function DashboardPage() {
   const register = useServerFn(registerSubmission);
   const mark = useServerFn(markSubmission);
   const update = useServerFn(updateDraft);
+  const renameFn = useServerFn(updateStudentName);
   const dl = useServerFn(downloadAssessment);
   const del = useServerFn(deleteSubmission);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -70,6 +79,10 @@ function DashboardPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [markAllLoading, setMarkAllLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [sortBy, setSortBy] = useState<"last" | "first">("last");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   const session = useQuery({
     queryKey: ["session", sessionId],
@@ -204,6 +217,52 @@ function DashboardPage() {
     navigate({ to: "/auth", replace: true });
   }
 
+  function toggleSort(by: "last" | "first") {
+    if (sortBy === by) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(by);
+      setSortDir("asc");
+    }
+  }
+
+  function startEdit(id: string, currentDisplay: string) {
+    setEditingId(id);
+    setEditValue(currentDisplay);
+  }
+
+  async function commitEdit(id: string) {
+    const v = editValue.trim();
+    if (!v) {
+      setEditingId(null);
+      return;
+    }
+    try {
+      await renameFn({ data: { id, studentName: v } });
+      await qc.refetchQueries({ queryKey: ["subs", sessionId] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Rename failed");
+    } finally {
+      setEditingId(null);
+    }
+  }
+
+  const sortedSubs = (() => {
+    const rows = [...(subs.data ?? [])];
+    rows.sort((a, b) => {
+      const fa = formatStudentName(a.student_name);
+      const fb = formatStudentName(b.student_name);
+      const [lastA, firstA = ""] = fa.split(",").map((p) => p.trim());
+      const [lastB, firstB = ""] = fb.split(",").map((p) => p.trim());
+      const key = sortBy === "last"
+        ? [lastA, firstA].join(" ").localeCompare([lastB, firstB].join(" "))
+        : [firstA, lastA].join(" ").localeCompare([firstB, lastB].join(" "));
+      return sortDir === "asc" ? key : -key;
+    });
+    return rows;
+  })();
+
+
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="border-b bg-background">
@@ -314,7 +373,33 @@ function DashboardPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Student</TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1">
+                    <span>Student</span>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("last")}
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs hover:bg-muted"
+                      title="Sort by surname"
+                    >
+                      Surname
+                      {sortBy === "last" ? (
+                        sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("first")}
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs hover:bg-muted"
+                      title="Sort by first name"
+                    >
+                      First
+                      {sortBy === "first" ? (
+                        sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                      ) : <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                    </button>
+                  </div>
+                </TableHead>
                 <TableHead>Document</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -328,13 +413,47 @@ function DashboardPage() {
                   </TableCell>
                 </TableRow>
               )}
-              {(subs.data ?? []).map((s) => {
+              {sortedSubs.map((s) => {
                 const isOpen = expanded[s.id] && s.marking_status === "complete";
+                const displayName = formatStudentName(s.student_name);
+                const isEditing = editingId === s.id;
                 return (
                   <FragmentWithKey key={s.id}>
                     <TableRow>
 
-                      <TableCell className="font-medium">{formatStudentName(s.student_name)}</TableCell>
+                      <TableCell className="font-medium">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              autoFocus
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") commitEdit(s.id);
+                                if (e.key === "Escape") setEditingId(null);
+                              }}
+                              className="h-7 text-sm"
+                              placeholder="Last, First"
+                            />
+                            <Button variant="ghost" size="sm" onClick={() => commitEdit(s.id)} title="Save">
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} title="Cancel">
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(s.id, displayName)}
+                            className="group inline-flex items-center gap-1.5 text-left hover:text-primary"
+                            title="Click to edit name"
+                          >
+                            <span>{displayName}</span>
+                            <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60" />
+                          </button>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <button
                           onClick={() =>
