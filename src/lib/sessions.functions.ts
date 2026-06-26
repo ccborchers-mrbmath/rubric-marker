@@ -38,11 +38,26 @@ export const listSessions = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("marking_sessions")
-      .select("id,name,created_at")
-      .order("created_at", { ascending: false });
+      .select("id,name,created_at,updated_at,submissions(marking_status)")
+      .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return data;
+    return (data ?? []).map((s: any) => {
+      const subs: { marking_status: string }[] = s.submissions ?? [];
+      const total = subs.length;
+      const complete = subs.filter((x) => x.marking_status === "complete").length;
+      const inProgress = subs.filter((x) => x.marking_status === "in_progress").length;
+      const pending = subs.filter((x) => x.marking_status === "pending").length;
+      const errored = subs.filter((x) => x.marking_status === "error").length;
+      return {
+        id: s.id,
+        name: s.name,
+        created_at: s.created_at,
+        updated_at: s.updated_at,
+        counts: { total, complete, in_progress: inProgress, pending, errored },
+      };
+    });
   });
+
 
 export const getSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
