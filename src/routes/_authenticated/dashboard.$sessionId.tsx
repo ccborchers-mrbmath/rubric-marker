@@ -8,6 +8,7 @@ import {
   listSubmissions,
   registerSubmission,
   updateDraft,
+  updateStudentName,
   downloadAssessment,
   deleteSubmission,
 } from "@/lib/submissions.functions";
