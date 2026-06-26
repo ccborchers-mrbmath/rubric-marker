@@ -14,7 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      marking_sessions: {
+        Row: {
+          brief_mime: string
+          brief_path: string
+          context_prompt: string | null
+          created_at: string
+          id: string
+          name: string
+          rubric_mime: string
+          rubric_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brief_mime: string
+          brief_path: string
+          context_prompt?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          rubric_mime: string
+          rubric_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brief_mime?: string
+          brief_path?: string
+          context_prompt?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          rubric_mime?: string
+          rubric_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          created_at: string
+          draft_markdown: string | null
+          error_message: string | null
+          file_name: string
+          file_path: string
+          id: string
+          marking_status: Database["public"]["Enums"]["marking_status"]
+          mime_type: string
+          session_id: string
+          student_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          draft_markdown?: string | null
+          error_message?: string | null
+          file_name: string
+          file_path: string
+          id?: string
+          marking_status?: Database["public"]["Enums"]["marking_status"]
+          mime_type: string
+          session_id: string
+          student_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          draft_markdown?: string | null
+          error_message?: string | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          marking_status?: Database["public"]["Enums"]["marking_status"]
+          mime_type?: string
+          session_id?: string
+          student_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "marking_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +114,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      marking_status: "pending" | "in_progress" | "complete" | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +241,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      marking_status: ["pending", "in_progress", "complete", "error"],
+    },
   },
 } as const
