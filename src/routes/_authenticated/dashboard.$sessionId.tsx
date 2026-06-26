@@ -311,8 +311,9 @@ function DashboardPage() {
               {(subs.data ?? []).map((s) => {
                 const isOpen = expanded[s.id] && s.marking_status === "complete";
                 return (
-                  <>
-                    <TableRow key={s.id}>
+                  <FragmentWithKey key={s.id}>
+                    <TableRow>
+
                       <TableCell className="font-medium">{s.student_name}</TableCell>
                       <TableCell>
                         <button
