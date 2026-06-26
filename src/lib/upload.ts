@@ -35,11 +35,14 @@ export function nameFromFilename(filename: string): string {
 }
 
 export function formatStudentName(raw: string): string {
-  const words = raw.trim().split(/\s+/);
-  if (words.length < 2) return raw;
-  const first = words[0];
-  const last = words[1];
-  return `${last}, ${first}`;
+  const trimmed = raw.trim();
+  // Already in "Last, First" format — keep it
+  if (/^[^,\s][^,]*,\s*\S/.test(trimmed)) {
+    return trimmed;
+  }
+  const words = trimmed.split(/\s+/);
+  if (words.length < 2) return trimmed;
+  return `${words[1]}, ${words[0]}`;
 }
 
 export { safeName };
