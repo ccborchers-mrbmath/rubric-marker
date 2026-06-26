@@ -249,9 +249,12 @@ export function DocxEditor({
         </p>
       </div>
 
-      <div className="flex justify-center overflow-auto rounded-md bg-muted/40 p-4 sm:p-6">
-        <EditorContent editor={editor} className="w-full max-w-[8.5in]" />
+      <div className="max-h-[75vh] overflow-auto rounded-md bg-muted/40 p-4 sm:p-6">
+        <div className="flex justify-center">
+          <EditorContent editor={editor} className="w-full max-w-[8.5in]" />
+        </div>
       </div>
+
 
       <Dialog
         open={!!rewrite}
