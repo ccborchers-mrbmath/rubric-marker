@@ -1,5 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { marked } from "marked";
+import TurndownService from "turndown";
 import { spellcheckDraft, rewriteSelection } from "@/lib/marking.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +16,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, SpellCheck, Wand2 } from "lucide-react";
+import {
+  Bold,
+  Heading1,
+  Heading2,
+  Heading3,
+  Italic,
+  List,
+  ListOrdered,
+  Loader2,
+  SpellCheck,
+  Wand2,
+} from "lucide-react";
+
+const td = new TurndownService({
+  headingStyle: "atx",
+  bulletListMarker: "-",
+  codeBlockStyle: "fenced",
+  emDelimiter: "*",
+});
+
+function mdToHtml(md: string): string {
+  return marked.parse(md ?? "", { async: false, gfm: true, breaks: false }) as string;
+}
+function htmlToMd(html: string): string {
+  return td.turndown(html ?? "").trim();
+}
 
 export function DocxEditor({
   submissionId,
@@ -25,22 +54,45 @@ export function DocxEditor({
 }) {
   const spellFn = useServerFn(spellcheckDraft);
   const rewriteFn = useServerFn(rewriteSelection);
-  const taRef = useRef<HTMLTextAreaElement | null>(null);
+  const lastEmittedMd = useRef<string>(value);
+
+  const editor = useEditor({
+    extensions: [StarterKit.configure({ heading: { levels: [1, 2, 3] } })],
+    content: mdToHtml(value),
+    editorProps: {
+      attributes: {
+        class:
+          "docx-page min-h-[60vh] w-full max-w-[8.5in] bg-white px-[1in] py-[1in] text-[#1a1a1a] shadow-md ring-1 ring-black/5 outline-none focus:ring-2 focus:ring-primary/40 rounded-sm prose prose-sm max-w-none prose-headings:text-[#1f3864] prose-headings:font-semibold prose-h1:text-[22pt] prose-h2:text-[16pt] prose-h3:text-[13pt] prose-p:my-2 prose-strong:text-[#1a1a1a]",
+        style:
+          "font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.5;",
+        spellcheck: "true",
+      },
+    },
+    onUpdate: ({ editor }) => {
+      const md = htmlToMd(editor.getHTML());
+      lastEmittedMd.current = md;
+      onChange(md);
+    },
+  });
+
+  // External value changes (e.g. spellcheck result) → re-render editor.
+  useEffect(() => {
+    if (!editor) return;
+    if (value === lastEmittedMd.current) return;
+    lastEmittedMd.current = value;
+    editor.commands.setContent(mdToHtml(value), { emitUpdate: false });
+  }, [value, editor]);
 
   const [spelling, setSpelling] = useState(false);
-  const [sel, setSel] = useState<{ start: number; end: number }>({
-    start: 0,
-    end: 0,
-  });
   const [rewrite, setRewrite] = useState<{
     selection: string;
-    start: number;
-    end: number;
+    from: number;
+    to: number;
     instruction: string;
     loading: boolean;
   } | null>(null);
 
-  const wc = value.trim() ? value.trim().split(/\s+/).length : 0;
+  const wc = value.trim() ? value.replace(/[#*_>`-]/g, " ").trim().split(/\s+/).length : 0;
 
   async function onSpellcheck() {
     if (!value.trim()) return;
@@ -48,6 +100,10 @@ export function DocxEditor({
     try {
       const r = await spellFn({ data: { id: submissionId, text: value } });
       onChange(r.text);
+      if (editor) {
+        lastEmittedMd.current = r.text;
+        editor.commands.setContent(mdToHtml(r.text), { emitUpdate: false });
+      }
       toast.success("Spelling & grammar checked");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Spellcheck failed");
@@ -57,29 +113,22 @@ export function DocxEditor({
   }
 
   function openRewrite() {
-    const ta = taRef.current;
-    if (!ta) return;
-    const start = ta.selectionStart ?? 0;
-    const end = ta.selectionEnd ?? 0;
-    if (start === end) {
+    if (!editor) return;
+    const { from, to } = editor.state.selection;
+    if (from === to) {
       toast.error("Select some text first");
       return;
     }
-    const selection = value.slice(start, end);
+    const selection = editor.state.doc.textBetween(from, to, "\n");
     if (!selection.trim()) {
       toast.error("Select some text first");
       return;
     }
-    setRewrite({ selection, start, end, instruction: "", loading: false });
+    setRewrite({ selection, from, to, instruction: "", loading: false });
   }
 
   async function runRewrite() {
-    if (!rewrite) return;
-    if (value.slice(rewrite.start, rewrite.end) !== rewrite.selection) {
-      toast.error("The draft changed since you opened this. Reselect and try again.");
-      setRewrite(null);
-      return;
-    }
+    if (!rewrite || !editor) return;
     setRewrite({ ...rewrite, loading: true });
     try {
       const r = await rewriteFn({
@@ -90,9 +139,11 @@ export function DocxEditor({
           instruction: rewrite.instruction.trim() || undefined,
         },
       });
-      const next =
-        value.slice(0, rewrite.start) + r.text + value.slice(rewrite.end);
-      onChange(next);
+      editor
+        .chain()
+        .focus()
+        .insertContentAt({ from: rewrite.from, to: rewrite.to }, r.text)
+        .run();
       toast.success("Selection rewritten");
       setRewrite(null);
     } catch (e) {
@@ -101,10 +152,80 @@ export function DocxEditor({
     }
   }
 
+  if (!editor) return null;
+
+  const btn = (active: boolean) =>
+    `h-8 px-2 ${active ? "bg-accent text-accent-foreground" : ""}`;
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-background px-3 py-2">
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={btn(editor.isActive("heading", { level: 1 }))}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            title="Heading 1"
+          >
+            <Heading1 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={btn(editor.isActive("heading", { level: 2 }))}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            title="Heading 2"
+          >
+            <Heading2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={btn(editor.isActive("heading", { level: 3 }))}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            title="Heading 3"
+          >
+            <Heading3 className="h-4 w-4" />
+          </Button>
+          <span className="mx-1 h-5 w-px bg-border" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className={btn(editor.isActive("bold"))}
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            title="Bold"
+          >
+            <Bold className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={btn(editor.isActive("italic"))}
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            title="Italic"
+          >
+            <Italic className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={btn(editor.isActive("bulletList"))}
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            title="Bulleted list"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={btn(editor.isActive("orderedList"))}
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            title="Numbered list"
+          >
+            <ListOrdered className="h-4 w-4" />
+          </Button>
+          <span className="mx-1 h-5 w-px bg-border" />
           <Button
             variant="ghost"
             size="sm"
@@ -118,42 +239,17 @@ export function DocxEditor({
             )}
             Spelling &amp; grammar
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={openRewrite}
-            title="Select text in the draft, then click"
-          >
+          <Button variant="ghost" size="sm" onClick={openRewrite}>
             <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Rewrite selection
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
           {wc} word{wc === 1 ? "" : "s"}
-          {sel.start !== sel.end ? ` · ${sel.end - sel.start} selected` : ""}
         </p>
       </div>
 
       <div className="flex justify-center overflow-auto rounded-md bg-muted/40 p-4 sm:p-6">
-        <textarea
-          ref={taRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onSelect={(e) => {
-            const t = e.currentTarget;
-            setSel({
-              start: t.selectionStart ?? 0,
-              end: t.selectionEnd ?? 0,
-            });
-          }}
-          spellCheck
-          className="docx-page min-h-[60vh] w-full max-w-[8.5in] resize-y rounded-sm bg-white px-[1in] py-[1in] text-[#1a1a1a] shadow-md ring-1 ring-black/5 outline-none focus:ring-2 focus:ring-primary/40"
-          style={{
-            fontFamily: "Calibri, 'Segoe UI', Arial, sans-serif",
-            fontSize: "11pt",
-            lineHeight: 1.5,
-          }}
-        />
+        <EditorContent editor={editor} className="w-full max-w-[8.5in]" />
       </div>
 
       <Dialog
