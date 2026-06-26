@@ -396,7 +396,7 @@ function DashboardPage() {
                       </TableCell>
                     </TableRow>
                     {isOpen && (
-                      <TableRow key={s.id + "-draft"}>
+                      <TableRow>
                         <TableCell colSpan={4} className="bg-muted/40">
                           <div className="space-y-2 p-2">
                             <p className="text-xs font-medium text-muted-foreground">
@@ -422,7 +422,8 @@ function DashboardPage() {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </FragmentWithKey>
+
                 );
               })}
             </TableBody>
