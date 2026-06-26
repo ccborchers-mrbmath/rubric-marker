@@ -136,7 +136,7 @@ function DashboardPage() {
       }
     }
     if (ok > 0) toast.success(`Uploaded ${ok} submission${ok > 1 ? "s" : ""}`);
-    qc.invalidateQueries({ queryKey: ["subs", sessionId] });
+    await qc.refetchQueries({ queryKey: ["subs", sessionId] });
     if (fileRef.current) fileRef.current.value = "";
   }
 
