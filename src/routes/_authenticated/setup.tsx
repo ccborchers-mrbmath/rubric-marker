@@ -68,17 +68,25 @@ function SetupPage() {
     <div className="min-h-screen bg-muted/30">
       <header className="border-b bg-background">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <GraduationCap className="h-4 w-4" />
+          <div className="flex items-center gap-3">
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/sessions">
+                <ArrowLeft className="mr-1 h-4 w-4" /> All sessions
+              </Link>
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                <GraduationCap className="h-4 w-4" />
+              </div>
+              <span className="font-semibold">MarkMate</span>
             </div>
-            <span className="font-semibold">MarkMate</span>
           </div>
           <Button variant="ghost" size="sm" onClick={signOut}>
             <LogOut className="mr-2 h-4 w-4" /> Sign out
           </Button>
         </div>
       </header>
+
 
       <main className="mx-auto max-w-3xl px-6 py-10">
         <div className="mb-6">
