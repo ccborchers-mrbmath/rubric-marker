@@ -15,14 +15,27 @@ async function fileToBase64(
   return buf.toString("base64");
 }
 
-function blockFor(mime: string, fileName: string, base64: string) {
+const DOCX_MIME =
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+async function blockFor(mime: string, fileName: string, base64: string) {
   if (mime.startsWith("image/")) {
     return {
       type: "image_url" as const,
       image_url: { url: `data:${mime};base64,${base64}` },
     };
   }
-  // PDF / DOCX / others: send as file block
+  if (mime === DOCX_MIME || fileName.toLowerCase().endsWith(".docx")) {
+    // Gemini doesn't accept .docx — extract text first.
+    const mammoth = await import("mammoth");
+    const buf = Buffer.from(base64, "base64");
+    const { value } = await mammoth.extractRawText({ buffer: buf });
+    return {
+      type: "text" as const,
+      text: `[Extracted text from ${fileName}]:\n${value}`,
+    };
+  }
+  // PDF / others: send as file block
   return {
     type: "file" as const,
     file: {
@@ -82,11 +95,17 @@ Mark the submission strictly against the rubric. Output a structured assessment 
 
 Use clear language. Do not invent rubric criteria; use those in the rubric verbatim.`;
 
+      const [rubricBlock, briefBlock, studentBlock] = await Promise.all([
+        blockFor(session.rubric_mime, "rubric", rubricB64),
+        blockFor(session.brief_mime, "brief", briefB64),
+        blockFor(sub.mime_type, sub.file_name, studentB64),
+      ]);
+
       const userContent = [
         { type: "text" as const, text: "RUBRIC:" },
-        blockFor(session.rubric_mime, "rubric", rubricB64),
+        rubricBlock,
         { type: "text" as const, text: "ASSIGNMENT TASK BRIEF:" },
-        blockFor(session.brief_mime, "brief", briefB64),
+        briefBlock,
         ...(session.context_prompt
           ? [
               {
@@ -99,7 +118,7 @@ Use clear language. Do not invent rubric criteria; use those in the rubric verba
           type: "text" as const,
           text: `STUDENT SUBMISSION (student name: ${sub.student_name}):`,
         },
-        blockFor(sub.mime_type, sub.file_name, studentB64),
+        studentBlock,
         {
           type: "text" as const,
           text: "Now produce the structured Markdown assessment.",
