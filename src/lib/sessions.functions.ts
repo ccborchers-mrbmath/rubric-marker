@@ -84,3 +84,36 @@ export const getSignedUrl = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { url: signed.signedUrl };
   });
+
+export const deleteSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    // Gather all storage paths to remove
+    const { data: subs } = await supabase
+      .from("submissions")
+      .select("file_path")
+      .eq("session_id", data.id);
+    const { data: sess } = await supabase
+      .from("marking_sessions")
+      .select("rubric_path,brief_path")
+      .eq("id", data.id)
+      .single();
+    const paths = [
+      ...(subs ?? []).map((s) => s.file_path),
+      sess?.rubric_path,
+      sess?.brief_path,
+    ].filter((p): p is string => !!p);
+    if (paths.length) {
+      await supabase.storage.from("marking-files").remove(paths);
+    }
+    const { error } = await supabase
+      .from("marking_sessions")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
