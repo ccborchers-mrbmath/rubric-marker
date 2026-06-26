@@ -217,6 +217,52 @@ function DashboardPage() {
     navigate({ to: "/auth", replace: true });
   }
 
+  function toggleSort(by: "last" | "first") {
+    if (sortBy === by) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(by);
+      setSortDir("asc");
+    }
+  }
+
+  function startEdit(id: string, currentDisplay: string) {
+    setEditingId(id);
+    setEditValue(currentDisplay);
+  }
+
+  async function commitEdit(id: string) {
+    const v = editValue.trim();
+    if (!v) {
+      setEditingId(null);
+      return;
+    }
+    try {
+      await renameFn({ data: { id, studentName: v } });
+      await qc.refetchQueries({ queryKey: ["subs", sessionId] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Rename failed");
+    } finally {
+      setEditingId(null);
+    }
+  }
+
+  const sortedSubs = (() => {
+    const rows = [...(subs.data ?? [])];
+    rows.sort((a, b) => {
+      const fa = formatStudentName(a.student_name);
+      const fb = formatStudentName(b.student_name);
+      const [lastA, firstA = ""] = fa.split(",").map((p) => p.trim());
+      const [lastB, firstB = ""] = fb.split(",").map((p) => p.trim());
+      const key = sortBy === "last"
+        ? [lastA, firstA].join(" ").localeCompare([lastB, firstB].join(" "))
+        : [firstA, lastA].join(" ").localeCompare([firstB, lastB].join(" "));
+      return sortDir === "asc" ? key : -key;
+    });
+    return rows;
+  })();
+
+
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="border-b bg-background">
