@@ -368,10 +368,15 @@ function DashboardPage() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              disabled={markMut.isPending && markMut.variables === s.id}
                               onClick={() => markMut.mutate(s.id)}
                               title={s.marking_status === "complete" ? "Re-mark" : "Mark"}
                             >
-                              <Wand2 className="h-4 w-4" />
+                              {markMut.isPending && markMut.variables === s.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Wand2 className="h-4 w-4" />
+                              )}
                             </Button>
                           )}
                           {s.marking_status === "complete" && (
