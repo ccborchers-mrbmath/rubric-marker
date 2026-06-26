@@ -69,6 +69,7 @@ function DashboardPage() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [markAllLoading, setMarkAllLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const session = useQuery({
     queryKey: ["session", sessionId],
@@ -115,7 +116,8 @@ function DashboardPage() {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
     const arr = Array.from(files);
-    toast.info(`Uploading ${arr.length} file${arr.length > 1 ? "s" : ""}…`);
+    setUploading(true);
+    const t = toast.loading(`Uploading ${arr.length} file${arr.length > 1 ? "s" : ""}…`);
     let ok = 0;
     for (const f of arr) {
       try {
@@ -138,8 +140,10 @@ function DashboardPage() {
         toast.error(`${f.name}: ${e instanceof Error ? e.message : "upload failed"}`);
       }
     }
-    if (ok > 0) toast.success(`Uploaded ${ok} submission${ok > 1 ? "s" : ""}`);
     await qc.refetchQueries({ queryKey: ["subs", sessionId] });
+    toast.dismiss(t);
+    if (ok > 0) toast.success(`Uploaded ${ok} submission${ok > 1 ? "s" : ""}`);
+    setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -286,8 +290,13 @@ function DashboardPage() {
                 className="hidden"
                 onChange={(e) => onBulkUpload(e.target.files)}
               />
-              <Button variant="outline" onClick={() => fileRef.current?.click()}>
-                <Upload className="mr-1.5 h-4 w-4" /> Upload
+              <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                {uploading ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-1.5 h-4 w-4" />
+                )}
+                {uploading ? "Uploading…" : "Upload"}
               </Button>
               <Button onClick={onMarkAllPending} disabled={markAllLoading}>
                 {markAllLoading ? (
