@@ -35,6 +35,7 @@ import {
   Eye,
   FileText,
   GraduationCap,
+  Loader2,
   LogOut,
   Sparkles,
   Trash2,
