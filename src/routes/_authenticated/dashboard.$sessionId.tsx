@@ -404,6 +404,7 @@ function DashboardPage() {
                               AI-generated assessment — edit inline, save, then download.
                             </p>
                             <DocxEditor
+                              submissionId={s.id}
                               value={drafts[s.id] ?? s.draft_markdown ?? ""}
                               onChange={(v) => setDrafts((p) => ({ ...p, [s.id]: v }))}
                             />
