@@ -116,7 +116,8 @@ function DashboardPage() {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
     const arr = Array.from(files);
-    toast.info(`Uploading ${arr.length} file${arr.length > 1 ? "s" : ""}…`);
+    setUploading(true);
+    const t = toast.loading(`Uploading ${arr.length} file${arr.length > 1 ? "s" : ""}…`);
     let ok = 0;
     for (const f of arr) {
       try {
@@ -139,8 +140,10 @@ function DashboardPage() {
         toast.error(`${f.name}: ${e instanceof Error ? e.message : "upload failed"}`);
       }
     }
-    if (ok > 0) toast.success(`Uploaded ${ok} submission${ok > 1 ? "s" : ""}`);
     await qc.refetchQueries({ queryKey: ["subs", sessionId] });
+    toast.dismiss(t);
+    if (ok > 0) toast.success(`Uploaded ${ok} submission${ok > 1 ? "s" : ""}`);
+    setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
   }
 
