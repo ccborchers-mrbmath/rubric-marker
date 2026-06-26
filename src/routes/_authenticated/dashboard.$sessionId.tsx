@@ -289,8 +289,13 @@ function DashboardPage() {
               <Button variant="outline" onClick={() => fileRef.current?.click()}>
                 <Upload className="mr-1.5 h-4 w-4" /> Upload
               </Button>
-              <Button onClick={onMarkAllPending}>
-                <Sparkles className="mr-1.5 h-4 w-4" /> Mark all pending
+              <Button onClick={onMarkAllPending} disabled={markAllLoading}>
+                {markAllLoading ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1.5 h-4 w-4" />
+                )}
+                Mark all pending
               </Button>
             </div>
           </CardContent>
