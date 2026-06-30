@@ -28,6 +28,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StatusPill } from "@/components/StatusPill";
 import { PreviewModal } from "@/components/PreviewModal";
 import { DocxEditor } from "@/components/DocxEditor";
+import { PromptSettings } from "@/components/PromptSettings";
+import { DraftHistoryDialog } from "@/components/DraftHistoryDialog";
 import { toast } from "sonner";
 import {
   ArrowLeft,
