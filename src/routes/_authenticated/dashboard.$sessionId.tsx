@@ -86,6 +86,7 @@ function DashboardPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [historyFor, setHistoryFor] = useState<string | null>(null);
 
   const session = useQuery({
     queryKey: ["session", sessionId],
