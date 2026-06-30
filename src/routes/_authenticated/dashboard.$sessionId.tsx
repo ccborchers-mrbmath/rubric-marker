@@ -121,7 +121,12 @@ function DashboardPage() {
 
   const markMut = useMutation({
     mutationFn: (id: string) => mark({ data: { id } }),
-    onMutate: () => {
+    onMutate: (id) => {
+      // Drop local edit so the editor reloads the freshly generated draft.
+      setDrafts((p) => {
+        const { [id]: _drop, ...rest } = p;
+        return rest;
+      });
       qc.invalidateQueries({ queryKey: ["subs", sessionId] });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["subs", sessionId] }),
