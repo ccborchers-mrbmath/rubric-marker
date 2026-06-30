@@ -598,6 +598,12 @@ function DashboardPage() {
       </main>
 
       <PreviewModal open={!!preview} onOpenChange={(v) => !v && setPreview(null)} mode={preview} />
+      <DraftHistoryDialog
+        submissionId={historyFor}
+        sessionId={sessionId}
+        open={!!historyFor}
+        onOpenChange={(v) => !v && setHistoryFor(null)}
+      />
     </div>
   );
 }
