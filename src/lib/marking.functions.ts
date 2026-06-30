@@ -98,20 +98,8 @@ export const markSubmission = createServerFn({ method: "POST" })
         (session.system_prompt && session.system_prompt.trim()) || DEFAULT_SYSTEM_PROMPT;
       const systemPrompt = renderSystemPrompt(promptTemplate, sub.student_name);
 
-1. A rubric defining marking criteria.
-2. The assignment task brief.
-3. Optional additional context from the teacher.
-4. A student's submission.
 
-Mark the submission strictly against the rubric. Output a structured assessment in Markdown with:
-- "# Assessment for ${sub.student_name}"
-- "## Criterion-by-Criterion Marks" — for each rubric criterion: name, score/grade, evidence, comment.
-- "## Overall Mark" — overall grade or numeric score with brief justification.
-- "## Strengths"
-- "## Areas for Improvement"
-- "## Summary Feedback" — 2-3 paragraph holistic feedback addressed to the student.
 
-Use clear language. Do not invent rubric criteria; use those in the rubric verbatim.`;
 
       const [rubricBlock, briefBlock, studentBlock] = await Promise.all([
         blockFor(session.rubric_mime, "rubric", rubricB64),
