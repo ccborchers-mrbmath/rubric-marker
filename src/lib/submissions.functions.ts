@@ -162,3 +162,58 @@ export const downloadAssessment = createServerFn({ method: "POST" })
       base64: buf.toString("base64"),
     };
   });
+
+export const listDraftVersions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ submissionId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("draft_versions")
+      .select("id, created_at, label, draft_markdown, system_prompt_used, context_used")
+      .eq("submission_id", data.submissionId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const restoreDraftVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({ submissionId: z.string().uuid(), versionId: z.string().uuid() })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: ver, error: vErr } = await supabase
+      .from("draft_versions")
+      .select("draft_markdown")
+      .eq("id", data.versionId)
+      .eq("user_id", userId)
+      .single();
+    if (vErr || !ver) throw new Error("Version not found");
+
+    // Archive current before restoring.
+    const { data: cur } = await supabase
+      .from("submissions")
+      .select("draft_markdown")
+      .eq("id", data.submissionId)
+      .single();
+    if (cur?.draft_markdown && cur.draft_markdown.trim()) {
+      await supabase.from("draft_versions").insert({
+        submission_id: data.submissionId,
+        user_id: userId,
+        draft_markdown: cur.draft_markdown,
+        label: "Auto-saved before restore",
+      });
+    }
+
+    const { error } = await supabase
+      .from("submissions")
+      .update({ draft_markdown: ver.draft_markdown, marking_status: "complete" })
+      .eq("id", data.submissionId);
+    if (error) throw new Error(error.message);
+    return { ok: true, draft: ver.draft_markdown };
+  });
