@@ -22,7 +22,7 @@ Mark the submission strictly against the rubric. Output a structured assessment 
 
 - "## Areas for Improvement"
 
-- "## Summary Feedback" — begin with a simple Markdown table listing each rubric criterion, the mark achieved, and the maximum mark for that criterion. Then provide 2-3 paragraphs of holistic feedback addressed to the student. Include the overall total mark achieved expressed as n/total and as a percentage (e.g. "You achieved 14/20 (70%).").
+- "## Summary Feedback" — Immediately under this heading, before the holistic feedback paragraphs, include a marks recap as a flat bullet list — never a table, never pipe characters. Format it exactly as one bullet per criterion: '- **<criterion name>**: <mark achieved>/<maximum mark>', using the exact criterion names and maximum marks from the rubric. After the criterion bullets, add one final bullet: '- **Total**: <sum of marks achieved>/<sum of maximum marks>'. Then provide 2-3 paragraphs of holistic feedback addressed to the student. Include the overall total mark achieved expressed as n/total and as a percentage (e.g. "You achieved 14/20 (70%)."). Do not use a table, multiple columns, or any pipe (|) character anywhere in your response.
 
 Use clear language. Do not invent rubric criteria; use those in the rubric verbatim.
 
