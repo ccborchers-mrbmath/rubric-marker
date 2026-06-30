@@ -73,6 +73,19 @@ export const markSubmission = createServerFn({ method: "POST" })
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const session = (sub as any).marking_sessions;
+
+      // Archive the prior draft (if any) as a version before overwriting.
+      if (sub.draft_markdown && sub.draft_markdown.trim()) {
+        await supabase.from("draft_versions").insert({
+          submission_id: sub.id,
+          user_id: sub.user_id,
+          draft_markdown: sub.draft_markdown,
+          system_prompt_used: null,
+          context_used: null,
+          label: "Previous draft (before re-mark)",
+        });
+      }
+
       const [rubricB64, briefB64, studentB64] = await Promise.all([
         fileToBase64(supabase, session.rubric_path),
         fileToBase64(supabase, session.brief_path),
@@ -81,7 +94,10 @@ export const markSubmission = createServerFn({ method: "POST" })
 
       const { callGateway } = await import("./ai-gateway.server");
 
-      const systemPrompt = `You are an experienced examiner. You will be given:
+      const promptTemplate =
+        (session.system_prompt && session.system_prompt.trim()) || DEFAULT_SYSTEM_PROMPT;
+      const systemPrompt = renderSystemPrompt(promptTemplate, sub.student_name);
+
 1. A rubric defining marking criteria.
 2. The assignment task brief.
 3. Optional additional context from the teacher.
