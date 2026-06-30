@@ -45,6 +45,7 @@ import {
   Loader2,
   LogOut,
   Pencil,
+  History,
   Sparkles,
   Trash2,
   Upload,
