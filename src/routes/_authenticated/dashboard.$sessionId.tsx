@@ -341,6 +341,14 @@ function DashboardPage() {
           </div>
         </div>
 
+        {session.data && (
+          <PromptSettings
+            sessionId={sessionId}
+            initialSystemPrompt={(session.data as any).system_prompt ?? null}
+            initialContextPrompt={(session.data as any).context_prompt ?? null}
+          />
+        )}
+
         <Card className="mb-6">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
