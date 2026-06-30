@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      draft_versions: {
+        Row: {
+          context_used: string | null
+          created_at: string
+          draft_markdown: string
+          id: string
+          label: string | null
+          submission_id: string
+          system_prompt_used: string | null
+          user_id: string
+        }
+        Insert: {
+          context_used?: string | null
+          created_at?: string
+          draft_markdown: string
+          id?: string
+          label?: string | null
+          submission_id: string
+          system_prompt_used?: string | null
+          user_id: string
+        }
+        Update: {
+          context_used?: string | null
+          created_at?: string
+          draft_markdown?: string
+          id?: string
+          label?: string | null
+          submission_id?: string
+          system_prompt_used?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_versions_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marking_sessions: {
         Row: {
           brief_mime: string
@@ -24,6 +65,7 @@ export type Database = {
           name: string
           rubric_mime: string
           rubric_path: string
+          system_prompt: string | null
           updated_at: string
           user_id: string
         }
@@ -36,6 +78,7 @@ export type Database = {
           name: string
           rubric_mime: string
           rubric_path: string
+          system_prompt?: string | null
           updated_at?: string
           user_id: string
         }
@@ -48,6 +91,7 @@ export type Database = {
           name?: string
           rubric_mime?: string
           rubric_path?: string
+          system_prompt?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -28,6 +28,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StatusPill } from "@/components/StatusPill";
 import { PreviewModal } from "@/components/PreviewModal";
 import { DocxEditor } from "@/components/DocxEditor";
+import { PromptSettings } from "@/components/PromptSettings";
+import { DraftHistoryDialog } from "@/components/DraftHistoryDialog";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -43,6 +45,7 @@ import {
   Loader2,
   LogOut,
   Pencil,
+  History,
   Sparkles,
   Trash2,
   Upload,
@@ -83,6 +86,7 @@ function DashboardPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [historyFor, setHistoryFor] = useState<string | null>(null);
 
   const session = useQuery({
     queryKey: ["session", sessionId],
@@ -117,7 +121,12 @@ function DashboardPage() {
 
   const markMut = useMutation({
     mutationFn: (id: string) => mark({ data: { id } }),
-    onMutate: () => {
+    onMutate: (id) => {
+      // Drop local edit so the editor reloads the freshly generated draft.
+      setDrafts((p) => {
+        const { [id]: _drop, ...rest } = p;
+        return rest;
+      });
       qc.invalidateQueries({ queryKey: ["subs", sessionId] });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["subs", sessionId] }),
@@ -332,6 +341,14 @@ function DashboardPage() {
           </div>
         </div>
 
+        {session.data && (
+          <PromptSettings
+            sessionId={sessionId}
+            initialSystemPrompt={(session.data as any).system_prompt ?? null}
+            initialContextPrompt={(session.data as any).context_prompt ?? null}
+          />
+        )}
+
         <Card className="mb-6">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
@@ -521,6 +538,14 @@ function DashboardPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => setHistoryFor(s.id)}
+                                title="Draft history"
+                              >
+                                <History className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => onDownload(s.id, s.student_name)}
                                 title="Download Word"
                               >
@@ -573,6 +598,12 @@ function DashboardPage() {
       </main>
 
       <PreviewModal open={!!preview} onOpenChange={(v) => !v && setPreview(null)} mode={preview} />
+      <DraftHistoryDialog
+        submissionId={historyFor}
+        sessionId={sessionId}
+        open={!!historyFor}
+        onOpenChange={(v) => !v && setHistoryFor(null)}
+      />
     </div>
   );
 }

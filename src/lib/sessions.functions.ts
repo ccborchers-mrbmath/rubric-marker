@@ -117,3 +117,29 @@ export const deleteSession = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateSessionPrompt = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        systemPrompt: z.string().max(20000).nullable(),
+        contextPrompt: z.string().max(20000).nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("marking_sessions")
+      .update({
+        system_prompt: data.systemPrompt,
+        context_prompt: data.contextPrompt,
+      })
+      .eq("id", data.id)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
