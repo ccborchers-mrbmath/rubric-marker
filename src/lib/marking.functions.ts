@@ -149,6 +149,16 @@ export const markSubmission = createServerFn({ method: "POST" })
         })
         .eq("id", data.id);
 
+      // Snapshot the new draft + the exact prompt/context used to produce it.
+      await supabase.from("draft_versions").insert({
+        submission_id: sub.id,
+        user_id: sub.user_id,
+        draft_markdown: draft,
+        system_prompt_used: promptTemplate,
+        context_used: session.context_prompt ?? null,
+        label: "AI marking run",
+      });
+
       return { ok: true };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
