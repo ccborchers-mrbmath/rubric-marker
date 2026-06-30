@@ -22,7 +22,7 @@ Mark the submission strictly against the rubric. Output a structured assessment 
 
 - "## Areas for Improvement"
 
-- "## Summary Feedback" — 2-3 paragraph holistic feedback addressed to the student. Include the overall total mark achieved expressed as n/total and as a percentage (e.g. "You achieved 14/20 (70%).").
+- "## Summary Feedback" — begin with a simple Markdown table listing each rubric criterion, the mark achieved, and the maximum mark for that criterion. Then provide 2-3 paragraphs of holistic feedback addressed to the student. Include the overall total mark achieved expressed as n/total and as a percentage (e.g. "You achieved 14/20 (70%).").
 
 Use clear language. Do not invent rubric criteria; use those in the rubric verbatim.
 
