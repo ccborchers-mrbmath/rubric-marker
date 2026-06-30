@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { DEFAULT_SYSTEM_PROMPT, renderSystemPrompt } from "./default-prompt";
+
 
 async function fileToBase64(
   supabase: ReturnType<typeof Object>,
