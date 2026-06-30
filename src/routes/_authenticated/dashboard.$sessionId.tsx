@@ -538,6 +538,14 @@ function DashboardPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => setHistoryFor(s.id)}
+                                title="Draft history"
+                              >
+                                <History className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => onDownload(s.id, s.student_name)}
                                 title="Download Word"
                               >
